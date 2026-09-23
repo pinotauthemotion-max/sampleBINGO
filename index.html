@@ -379,10 +379,36 @@
       .board-cell.active.latest-active { border-width: 2px !important; transform: translate3d(0,0,0) scale(1.15) !important; }
     }
   
+    /* ===== Wedding版：PC専用・キャラクター左右寄せ ===== */
+    @media (min-width:1101px) {
+      .character {
+        width: 1075px !important;
+      }
 
+      .character.groom {
+        left: -500px !important;
+        right: auto !important;
+      }
+
+      .character.bride {
+        right: -500px !important;
+        left: auto !important;
+      }
+    }
 
   
+    /* ===== Wedding版：PC専用・キャラクター最終位置調整 ===== */
+    @media (min-width:1101px) {
+      .character.groom {
+        left: -760px !important;
+        bottom: -750px !important;
+      }
 
+      .character.bride {
+        right: -760px !important;
+        bottom: -750px !important;
+      }
+    }
 
   
     /* ===== Wedding版：キャラクター滑らか動作・60fpsテスト ===== */
@@ -558,8 +584,8 @@
     let isRolling = false, isStopping = false, rouletteTimeout = null, currentSpeed = 70, stopStep = 0;
     let extremeCount = 0, targetExtremeCount = 0;
     let isDoubleChance = false;
+    let drawCount = 0;
     let bgmEnabled = false;
-    let sampleDrawCount = 0;
 
     const display = document.getElementById('num-display');
     const btn = document.getElementById('action-btn');
@@ -765,8 +791,7 @@
         if (rouletteTimeout) { clearTimeout(rouletteTimeout); rouletteTimeout = null; }
         numbers = Array.from({length: 75}, (_, i) => i + 1);
         isRolling = false; isStopping = false; currentSpeed = 70; stopStep = 0;
-        isDoubleChance = false; extremeCount = 0; targetExtremeCount = 0;
-        sampleDrawCount = 0;
+        isDoubleChance = false; extremeCount = 0; targetExtremeCount = 0; drawCount = 0;
 
         display.innerHTML = 'BINGO'; display.className = '';
         btn.textContent = 'START'; btn.className = 'btn btn-start';
@@ -867,22 +892,26 @@
         document.getElementById(`cell-${chosen}`)?.classList.add('active', 'latest-active');
       }
 
-      manageBGM();
-      setTimeout(() => {
-        setCoupleState('');
-        if (sampleDrawCount >= 10) {
+      // サンプル版：10回目の抽選でゲーム終了
+      drawCount++;
+      if (drawCount >= 10) {
+        setTimeout(() => {
+          btn.disabled = true;
           btn.textContent = 'GAME END';
           btn.className = 'btn btn-waiting';
-          btn.disabled = true;
-          isRolling = false;
-          isStopping = false;
-        }
-      }, 2200);
+        }, 2200);
+      }
+
+      manageBGM();
+      setTimeout(() => setCoupleState(''), 2200);
     }
 
     btn.addEventListener('click', () => {
       getAudio();
-      if (!isRolling && sampleDrawCount >= 10) return;
+      if (!numbers.length && !isRolling) return alert('全数字が出ました！');
+      if (numbers.length === 1 && !isRolling) isDoubleChance = false;
+
+      if (drawCount >= 10) return;
 
       if (!isRolling && !isStopping) {
         document.querySelectorAll('.board-cell.latest-active').forEach(cell => cell.classList.remove('latest-active'));
@@ -890,8 +919,9 @@
         isRolling = true; currentSpeed = 70; stopStep = 0;
         extremeCount = 0; targetExtremeCount = 0;
 
-        sampleDrawCount++;
-        if (sampleDrawCount === 5 && numbers.length >= 2) {
+        // サンプル版：5回目の抽選は必ずダブルチャンス
+        // 抽選開始前の残り数字が71個 = これから5回目
+        if (numbers.length === 71 && numbers.length >= 2) {
           isDoubleChance = true;
         } else {
           isDoubleChance = false;
